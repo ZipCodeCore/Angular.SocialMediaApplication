@@ -12,12 +12,12 @@ public class Post {
     private Long id;
 
     @Basic
-    @Column(name = "LastTouched", insertable = false, updatable = false)
+    @Column(name = "CreatedTime", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdTime;
 
     @Basic
-    @Column(name = "LastTouched", insertable = false, updatable = false)
+    @Column(name = "LastTouched")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedTime;
 
@@ -89,13 +89,13 @@ public class Post {
     }
 
     @PrePersist
-    void createdAt() {
+    public void createdAt() {
         this.createdTime = this.updatedTime = new Date();
     }
 
 
     @PreUpdate
-    void updatedAt() {
+    public void updatedAt() {
         this.updatedTime = new Date();
     }
 }

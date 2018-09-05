@@ -239,13 +239,54 @@ export class PostComponent {
 ```
 * Navigate back to ``localhost:4200``. You should see your post under your new post textbox.
 
-### Part 4.0 - Creating our Posts Service
+### Part 4.0 - Creating our Feed Component
+
+* Our ``FeedComponent`` will be how we list of post from our friends.
+
+* In the ``app/src/components`` folder, create a ``feed`` folder.
+
+* In the ``post`` folder, add a ``feed.component.ts`` file and a ``feed.component.html`` file.
+
+### Part 4.1 - Creating the Post class
+
+* In the ``feed.component.ts`` file, create a ``NewPostComponent`` decorated with the ``@Component`` decorator, passing in the appropriate metadata object.
+```javascript
+@Component({
+    selector: 'app-feed',
+    templateUrl: './feed.component.html',
+})
+export class FeedComponent {
+    
+}
+```
+### Part 4.2 - Creating the Post html file
+
+* Our feed component will use our Post Component to display a list of posts.
+* Add the following html to the ``feed.component.html`` file. For now, we'll just add one post (which, as you remember, is populated with sample data).
+```html
+<app-post></app-post>
+```
+
+### Part 4.3 - Add our component to the AppModule
+
+* Navigate to the ``app.module.ts`` file, import your new component and add it to the declarations array.
+
+### Part 4.4 - Add our New Post Component to the root component html
+
+* Below the ``app-new-post`` selector, remove the ``app-post`` selector and add the ``app-feed`` selector for our feed component.
+```html
+<app-new-post></app-new-post>
+<app-feed></app-feed>
+```
+* Navigate back to ``localhost:4200``. You should see your post under your new post textbox.
+
+### Part 5.0 - Creating our Posts Service
 
 * In the ``src/app/root`` create a ``services`` folder.
 
 * In the ``services`` folder, create a ``posts.service.ts`` file.
 
-### Part 4.1 - Creating our PostsService class.
+### Part 5.1 - Creating our PostsService class.
 
 * Create and export a PostsService class.
 
@@ -266,7 +307,7 @@ export class PostsService {
 }
 ```
 
-### Part 4.2 Adding the PostsService to our Providers
+### Part 5.2 Adding the PostsService to our Providers
 
 * In order to use our PostsService, we need to add it to the module where we want to use it.
 * Navigate to the ``app.module.ts`` file. Import the ``PostsService`` class and add it to the providers array.
@@ -296,7 +337,7 @@ import { PostsService } from './services/posts.service';
 export class AppModule { }
 ```
 
-### Part 4.3 Adding Http Client for Http Requests
+### Part 5.3 Adding Http Client for Http Requests
 
 * To make http requests, we are going to use Angular's HttpClient, which provides a helpful library for dealing with http requests.
     * To use ``HttpClient``, we first need import the ``HttpClientModule`` within the module where we want to use it.
@@ -349,7 +390,7 @@ export class FareService {
 }
 ```
 
-### Part 4.4 Using Http Client for Http Requests
+### Part 5.4 Using Http Client for Http Requests
 
 * The ``HttpClient`` library includes helpful http verb methods like ``get``, ``post``, ``put``, and ``delete``. To make a get request for all posts from our RESTful Spring API, we're going to use ``http.get()``.
     * Create a getPosts method that calls the ``get`` method on the ``http`` object, passing in the url of the endpoint.
