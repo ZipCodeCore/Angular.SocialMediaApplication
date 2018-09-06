@@ -26,7 +26,7 @@
 
 * In the ``components`` folder, create a folder called ``new-post``. 
 
-* In the ``new-post`` folder, create two files, ``new-post.component.ts`` and ``new-post.component.ts``
+* In the ``new-post`` folder, create two files, ``new-post.component.ts`` and ``new-post.component.html``
 
 ### Part 2.2 - Creating the New Post class
 
@@ -244,7 +244,7 @@ export class PostComponent {
 
 * In the ``app/src/components`` folder, create a ``feed`` folder.
 
-* In the ``post`` folder, add a ``feed.component.ts`` file and a ``feed.component.html`` file.
+* In the ``feed`` folder, add a ``feed.component.ts`` file and a ``feed.component.html`` file.
 
 ### Part 4.1 - Creating the Post class
 
@@ -380,7 +380,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable()
-export class FareService {
+export class PostService {
   private http: HttpClient;
 
   constructor(http: HttpClient) {
