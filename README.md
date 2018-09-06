@@ -14,7 +14,7 @@
 
 * Using the Angular CLI, type ``ng new social-media-client``. This will generate a new Angular Project within a folder called social-media-client.
 
-* ``cd`` to that folder, and type ``ng serve``. This will compile the project and launch a server port to access it. Your project should be available at ``localhost:4200``, and you should see the angular logo along with some sample content.
+* ``cd`` to that folder, and type ``ng serve``. This will compile the project and launch a server port to access it. Your project should be available at ``http://localhost:4200``, and you should see the angular logo along with some sample content.
 
 ### Part 2.0 - Creating Angular Components
 
@@ -73,8 +73,7 @@ export class NewPostComponent {
 * Our new post component will include a textbox where we can type our post and submit it. In the ``new-post.component.html`` file, include the following html code.
 ```html
 <!-- This creates a textbox and a submit button for our new post component -->
-<textarea rows="4" cols="50">
-    How is your day?
+<textarea rows="4" cols="50" placeholder="How is your day?">
 </textarea>
 <button type="submit">
     Submit
@@ -284,14 +283,14 @@ export class FeedComponent {
 
 * In the ``src/app/root`` create a ``services`` folder.
 
-* In the ``services`` folder, create a ``posts.service.ts`` file.
+* In the ``services`` folder, create a ``post.service.ts`` file.
 
-### Part 5.1 - Creating our PostsService class.
+### Part 5.1 - Creating our PostService class.
 
-* Create and export a PostsService class.
+* Create and export a PostService class.
 
 ```javascript
-export class PostsService {
+export class PostService {
     
 }
 ```
@@ -302,15 +301,15 @@ export class PostsService {
 import { Injectable } from '@angular/core';
 
 @Injectable()
-export class PostsService {
+export class PostService {
     
 }
 ```
 
-### Part 5.2 Adding the PostsService to our Providers
+### Part 5.2 Adding the PostService to our Providers
 
-* In order to use our PostsService, we need to add it to the module where we want to use it.
-* Navigate to the ``app.module.ts`` file. Import the ``PostsService`` class and add it to the providers array.
+* In order to use our PostService, we need to add it to the module where we want to use it.
+* Navigate to the ``app.module.ts`` file. Import the ``PostService`` class and add it to the providers array.
 
 ```javascript
 import { BrowserModule } from '@angular/platform-browser';
@@ -320,7 +319,7 @@ import { AppComponent } from './app.component';
 import { NewPostComponent } from './components/new-post/new-post.component';
 import { PostComponent } from './components/post/post.component';
 
-import { PostsService } from './services/posts.service';
+import { PostService } from './services/posts.service';
 
 @NgModule({
   declarations: [
@@ -331,7 +330,7 @@ import { PostsService } from './services/posts.service';
   imports: [
     BrowserModule
   ],
-  providers: [PostsService],
+  providers: [PostService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
@@ -352,7 +351,7 @@ import { AppComponent } from './app.component';
 import { NewPostComponent } from './components/new-post/new-post.component';
 import { PostComponent } from './components/post/post.component';
 
-import { PostsService } from './services/posts.service';
+import { PostService } from './services/posts.service';
 
 @NgModule({
   declarations: [
@@ -364,7 +363,7 @@ import { PostsService } from './services/posts.service';
     BrowserModule,
     HttpClientModule
   ],
-  providers: [PostsService],
+  providers: [PostService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
@@ -422,7 +421,6 @@ export class FareService {
     * This creates a contract saying that all Post objects must have properties of a certain name and type.
 ```javascript
 export interface User {
-    id: number;
     username: string;
 }
 ```
@@ -432,10 +430,7 @@ export interface User {
 import { User } from './User.ts';
 
 export interface Post {
-    id: number;
     content: string;
-    createdTime: number;
-    updatedTime: number;
     user: User;
 }
 ```
@@ -449,7 +444,247 @@ export interface Post {
     }
 ```
 
-## Part 7.0 
+## Part 7.0 Populating our Feed Component with Data
+
+* Navigate to the ``feed.component.ts`` file. Now that we've created a service that our component depends on for data, we need to add our service as a dependency.
+
+* Import ``PostServices`` from the services folder.
+
+* Create a private field of type ``PostsService``.
+
+* Create a constructor with a parameter of type ``PostService`` as a dependency and assign the value to the ``postService`` field.
+
+```javascript
+import { Component } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { PostService } from '../../services/post.service';
+
+@Component({
+  selector: 'app-feed',
+  templateUrl: './feed.component.html'
+})
+export class FeedComponent {
+    private postService: PostService;
+    
+    constructor(postService: PostService) {
+        this.postService = postService;
+    }
+}
+```
+
+* By convention, we reserve our constructor for resolving dependencies and perform all other work in a special method called ``ngOnInit``
+    * ``ngOnInit`` is a lifecycle hook that is called after Angular first displays the data-bound properties.
+    * To use ``ngOnInit``, import ``OnInit`` from ``@angular/core``. ``OnInit`` is an interface. By designating that our ``FeedComponent`` implements ``OnInit``, Angular will know that the ``ngOnInit`` method is available to call. 
+    * <a href="https://angular.io/guide/lifecycle-hooks">More info on LifeCycle Hooks</a>
+* Add a public field of type ``Array<Post>`` called posts.
+* Place your ``ngOnInit`` method below your constructor.   
+```javascript
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { PostService } from '../../services/post.service';
+
+@Component({
+  selector: 'app-feed',
+  templateUrl: './feed.component.html'
+})
+export class FeedComponent implements OnInit {
+    private postService: PostService;
+    public posts: Array<Post>;
+    
+    constructor(postService: PostService) {
+        this.postService = postService;
+    }
+    
+    ngOnInit(): void {
+        
+    }
+}
+```
+
+* In our ``ngOnInit`` method, call the ``getPosts`` method on the ``PostService``. 
+    * Remember that the method returns an ``Observable``. Observables have a special method called ``subscribe`` which will allow us to receive messages when the value of the observable is changed.
+    * Our ``subscribe`` method takes a ``callback`` as a parameter.
+```javascript
+ngOnInit(): void {
+    postService.getPosts()
+        .subscribe(posts => {
+            this.posts = posts;
+        })    
+}
+```
+
+### Part 8.0 Populating Our Feed with Posts
+
+* Navigate to the ``feed.component.html``. Remember that we populated it with the ``<app-post>`` component, which currently contains sample data.
+* To create a list of posts, we are going to use the ``*ngFor`` directive. We'll first create some sample html to test.
+```html
+<app-post></app-post>
+<div *ngFor="let post of posts">
+    {{ post.user.username }}
+    {{ post.content }}
+</div>
+```
+* Rather than creating a div for each post, we want to create an ``app-post`` component for each post. Let's add *ngFor to our ``app-post`` element instead.
+    * Now we have an ``app-post`` component, still full of sample data, for each post in our posts array.
+```html
+<app-post *ngFor="let post of posts"></app-post>
+```
+
+### Part 8.1 Updating our PostComponent
+
+*Resources*: <a href="https://angular.io/guide/component-interaction">Component Interaction</a>
+
+* Child components can receive data to display from parent components. In the next steps, we'll update our ``PostComponent`` to receive a post to display from the ``FeedComponent`` 
+* Navigate to the ``post.component.ts`` file.
+* Add a public field of ``post`` of type ``post`` to the ``PostComponent`` class.
+```javascript
+import { Component } from '@angular/core';
+import { Post } from '../../types/Post';
+
+@Component({
+  selector: 'app-post',
+  templateUrl: './post.component.html',
+})
+export class PostComponent {
+  public post: Post;
+}
+```
+* This field will be populated by input from the parent component. To designate that a field will be inputted from the parent, use the ``@Input`` decorator.
+```javascript
+import { Component, Input } from '@angular/core';
+import { Post } from '../../types/Post';
+
+@Component({
+  selector: 'app-post',
+  templateUrl: './post.component.html',
+})
+export class PostComponent {
+  @Input() public post: Post;
+}
+```
+* Navigate to the ``post.component.html`` file.
+* Replace the sample data with the following data interpolations. 
+```javascript
+<div class="post">
+  <div class="post-username">{{post.user.username}}</div>
+  <div class="post-content">{{post.content}}</div>
+</div>
+```
+
+### Part 8.2 Updating the FeedComponent
+
+* Navigate to the ``feed.component.html`` file
+* The ``app-post`` component now has a property called post. We can bind the value of that field to a value we provide using one way data-binding.
+```javascript
+<app-post *ngFor="let post of posts" [post]="post"></app-post>
+```
+
+### Part 9.0 Posting new Posts
+
+*Resources*: <a href="https://angular.io/guide/forms">Angular Forms</a>, <a href="https://blog.thoughtram.io/angular/2016/10/13/two-way-data-binding-in-angular-2.html">Two Way Data-Binding Using ngModel</a>
+
+* Navigate to the ``app.module.ts``.  In order to work with our new post form, we'll need to import Angular's ``FormsModule``, which will allow us to do two-way data-binding.
+```javascript
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+import { AppComponent } from './app.component';
+import { NewPostComponent } from './components/new-post/new-post.component';
+import { PostComponent } from './components/post/post.component';
+import { FeedComponent } from './components/feed/feed.component';
+
+import { PostsService } from './services/posts.service';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    NewPostComponent,
+    PostComponent,
+    FeedComponent
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    FormsModule
+  ],
+  providers: [PostsService],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+* Navigate to the ``new-post.component.ts`` file. 
+* Add a new public field called ``content`` of type ``string``. 
+* Add a new public method called submitPost. Submit post should not take any parameters and should return void.
+```javascript
+export class NewPostComponent {
+  public content: string;
+  
+  public submitPost(): void {
+    
+  }
+}
+```
+* Navigate to the ``new-post.component.html`` file. Bind the value of the textarea to the content field, using two-way databinding with ngModel.
+* Bind the click event on the ``button`` selector with the ``submitPost`` method, using event binding. 
+```javascript
+<textarea rows="4" cols="50" placeholder="How is your day?" [(ngModel)]="content">
+</textarea>
+<div>
+  <button type="submit" (click)="submitPost()">
+    Submit
+  </button>
+</div>
+``` 
+* The submit post method should call a method in the ``PostService`` which handles sending a ``post`` request to our api. Navigate to the ``post.service.ts`` file.
+* Create a new method on the ``PostService`` class called ``createNewPost``, which takes in a parameter ``post`` of type ``Post`` and returns an ``Observable`` of type ``Post``.
+```javascript
+public createNewPost(post: Post): Observable<Post> {
+   return this.http.post<Post>('http://localhost:8080/posts', post);
+}
+```
+* Navigate to the ``new-post.component.ts`` file.
+* The ``submitPost`` method should call the createNewPost method on the submit on the ``PostService``. 
+* In order to use the ``PostService``, import and inject the service as a dependency.
+* In the ``submitPost`` method, create an variable called ``post`` of type ``Post`` containing a Post object. Assign the content property to ``this.content``. For now, we'll assign the user property to a predefined sample user. 
+```javascript
+import { Component } from '@angular/core';
+import { Post } from '../../types/Post';
+
+import { PostsService } from '../../services/posts.service';
+
+@Component({
+  selector: 'app-new-post',
+  templateUrl: './new-post.component.html',
+})
+export class NewPostComponent {
+  public content: string;
+  private postsService: PostsService;
+
+  constructor(postsService: PostsService) {
+    this.postsService = postsService;
+  }
+
+  public submitPost(): void {
+    const post: Post = {
+      content: this.content,
+      user: {
+        username: 'domi',
+        id: 1
+      }
+    };
+    this.postsService.createNewPost(post)
+      .subscribe();
+  }
+}
+```
+
+
+
+
+
+
 
 
 
