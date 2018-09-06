@@ -670,7 +670,7 @@ export class NewPostComponent {
     const post: Post = {
       content: this.content,
       user: {
-        username: 'domi',
+        username: 'me',
         id: 1
       }
     };
@@ -679,10 +679,129 @@ export class NewPostComponent {
   }
 }
 ```
+### Part 10.0 Updating Our Posts
 
+* We just posted a new post, but we don't see the update in our view. Let's refactor our code to listen for updates.
 
+* Navigate to the ``post.service.ts`` file. 
 
+* Recall that our our ``getPosts`` method returns an ``Observable``. Subscribing to this observable will listen for an update from the api when the data comes back from the server. However, it's hard for us to listen to updates to that data, especially when the update needs to happen in a separate component. Our ``NewPost`` component is triggering a change, but our ``Feed`` component needs to know about it.
 
+* We can use our service to send updates to our components when there are changes, using a special type of ``Observable`` called a ``BehaviorSubject``
+    * BehaviorSubjects can emit values over time. The have a notion of a "currentValue" and can receive new values to emit. All subscribers (also called Observers) will receive an update when the value is changed.
+    
+* Create two new fields on ``PostService``.
+    * The ``postsObservable`` should be public, so our components can subscribe to it.
+
+```javascript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+
+import { Post } from '../types/Post';
+
+@Injectable()
+export class PostsService {
+  private http: HttpClient;
+  private postsBehaviorSubject: BehaviorSubject<Array<Post>>;
+  public postsObservable: Observable<Array<Post>>;
+
+  constructor(http: HttpClient) {
+    this.http = http;
+
+    this.postsBehaviorSubject = new BehaviorSubject([]);
+    this.postsBehaviorSubject.asObservable();
+  }
+
+  public getPosts(): Observable<Array<Post>> {
+    return this.http.get<Array<Post>>('http://localhost:8080/posts');
+  }
+
+  public createNewPost(post: Post): Observable<Post> {
+    return this.http.post<Post>('http://localhost:8080/posts', post);
+  }
+}
+```
+
+* Instead of calling our ``getPosts`` method within our component, we will call it in our service, updating the BehaviorSubject with the value that comes back from the API, which will in term update the corresponding ``Observable`` and send a message to any subscribers.
+    * To give the BehaviorSubject a new value, call the ``next`` method, passing in the new value.
+    * ``getPosts`` is now private. We will only be calling it from within the service, then update a publicly available observer when we receive the data back from the http call.
+```javascript
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, BehaviorSubject } from 'rxjs';
+
+import { Post } from '../types/Post';
+
+@Injectable()
+export class PostsService {
+  private http: HttpClient;
+  private postsBehaviorSubject: BehaviorSubject<Array<Post>>;
+  public postsObservable: Observable<Array<Post>>;
+
+  constructor(http: HttpClient) {
+    this.http = http;
+
+    this.postsBehaviorSubject = new BehaviorSubject([]);
+    this.postsObservable = this.postsBehaviorSubject.asObservable();
+    
+    this.getPosts()
+        .subscribe(posts => {
+            this.postsBehaviorSubject.next(posts);
+        });
+  }
+
+  private getPosts(): Observable<Array<Post>> {
+    return this.http.get<Array<Post>>('http://localhost:8080/posts');
+  }
+
+  public createNewPost(post: Post): Observable<Post> {
+    return this.http.post<Post>('http://localhost:8080/posts', post);
+  }
+}
+```
+* Refactor our ```createNewPost``` method to return void, and instead subscribe to the ``Observable`` returned from ``http.post()``. When it receives a new value from the api, it should add the new post to the currentPosts array (i.e. the current value of the ``BehaviorSubject``), then update the ``BehaviorSubject`` with the new value.
+```javascript
+public createNewPost(post: Post): Observable<Post> {
+   this.http.post<Post>('http://localhost:8080/posts', post)
+       .subscribe(newPost => {
+            let currentPosts = this.postsBehaviorSubject.getValue();
+            currentPosts.add(newPost);
+            this.postsBehaviorSubject.next(currentPosts);
+       });
+}
+```
+### Part 10.1 Refactoring the NewPost component
+
+* Navigate to ``new-post.component.ts``. Remove the ``subscribe`` method from the ``this.postService.createNewPost()`` method declaration.
+```javascript
+public submitPost(): void {
+    const post: Post = {
+      content: this.content,
+      user: {
+        username: 'me',
+        id: 1
+      }
+    };
+    this.postsService.createNewPost(post);
+}
+```
+
+### Part 10.2 Refactoring the Feed Component
+
+* Navigate to the ``feed.component.ts`` file.
+
+* Instead of subscribing to the ``getPosts()`` method, subscribe to the publicly available ``postsObservable`` field on the ``PostService``.
+
+```javascript
+ngOnInit(): void {
+    this.postsService.postsObservable
+      .subscribe(posts => {
+        this.posts = posts;
+      });
+}
+```
+* Navigate back to ``localhost:8080``. Create a new post and watch it update the feed.
 
 
 
