@@ -421,6 +421,7 @@ export class PostService {
     * This creates a contract saying that all Post objects must have properties of a certain name and type.
 ```javascript
 export interface User {
+    id: number;
     username: string;
 }
 ```
@@ -660,10 +661,10 @@ import { PostsService } from '../../services/posts.service';
 })
 export class NewPostComponent {
   public content: string;
-  private postsService: PostsService;
+  private postService: PostsService;
 
-  constructor(postsService: PostsService) {
-    this.postsService = postsService;
+  constructor(postService: PostService) {
+    this.postService = postService;
   }
 
   public submitPost(): void {
@@ -674,7 +675,7 @@ export class NewPostComponent {
         id: 1
       }
     };
-    this.postsService.createNewPost(post)
+    this.postService.createNewPost(post)
       .subscribe();
   }
 }
@@ -762,11 +763,11 @@ export class PostsService {
 ```
 * Refactor our ```createNewPost``` method to return void, and instead subscribe to the ``Observable`` returned from ``http.post()``. When it receives a new value from the api, it should add the new post to the currentPosts array (i.e. the current value of the ``BehaviorSubject``), then update the ``BehaviorSubject`` with the new value.
 ```javascript
-public createNewPost(post: Post): Observable<Post> {
+public createNewPost(post: Post): void {
    this.http.post<Post>('http://localhost:8080/posts', post)
        .subscribe(newPost => {
             let currentPosts = this.postsBehaviorSubject.getValue();
-            currentPosts.add(newPost);
+            currentPosts.push(newPost);
             this.postsBehaviorSubject.next(currentPosts);
        });
 }
